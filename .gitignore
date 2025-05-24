@@ -1,0 +1,30 @@
+# Node dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Compiled files
+*.js.map
+*.d.ts
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.log
+.DS_Store
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Temporary files
+temp/
+tmp/
+
+# Optional: if using a package manager other than npm
+# yarn-lock.yml
+# pnpm-lock.yaml
