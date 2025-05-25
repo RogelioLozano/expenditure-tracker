@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import ExpendGraph from './components/ExpenditureDistributionGraph.vue'
-import { ref, h, onMounted, computed } from 'vue'
+import { ref, h, onMounted, computed, onUnmounted } from 'vue'
 import {
   NMenu, NIcon, darkTheme,
   lightTheme, NLayoutHeader,
   NLayout, NFlex, NCard, NSelect,
-  NLayoutContent, NLayoutSider, NConfigProvider,
+  NLayoutContent, NConfigProvider,
   NInputNumber, NButton, NInput, NSpace
 } from 'naive-ui'
+import { supabase } from '@/services/supabaseClient'
 import { DarkModeOutlined, HomeFilled } from '@vicons/material'
 import { addExpenditure, addCategory, getCategories } from './db/supaBase.ts'
 
@@ -51,6 +52,7 @@ async function refreshCategories() {
 const handleExpenditure = async () => {
   await addExpenditure(expenditure.value)
   pushExpenditure.value.pushExpenditure()
+  expenditure.value = { amount: 0, category: '' }
 }
 
 const handleRubro = async () => {
@@ -59,8 +61,38 @@ const handleRubro = async () => {
   rubro.value = ''
 }
 
+let channel: ReturnType<typeof supabase.channel> | null = null
+
 onMounted(async () => {
   await refreshCategories()
+
+      channel = supabase
+        .channel('realtime-categories')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT', // or '*' | 'INSERT' | 'UPDATE' | 'DELETE'
+                schema: 'public',
+                table: 'categories'
+            },
+            async (payload) => {
+                console.log('Realtime change:', payload)
+                // Fetch updated list (you could optimize this by applying the change directly)
+                await refreshCategories()
+            }
+        )
+        .subscribe((status) => {
+      if (status !== 'SUBSCRIBED') {
+        console.error('Failed to subscribe to realtime channel:', status)
+      }
+    })
+})
+
+
+onUnmounted(() => {
+    if (channel) {
+        supabase.removeChannel(channel)
+    }
 })
 
 </script>
@@ -113,7 +145,7 @@ onMounted(async () => {
         <n-layout-content content-style="padding: 0 24px;">
 
           <main>
-            <ExpendGraph :expenditure="expenditure" ref="pushExpenditure" />
+            <ExpendGraph :channel="channel" :expenditure="expenditure" ref="pushExpenditure" />
           </main>
 
         </n-layout-content>
