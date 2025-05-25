@@ -81,9 +81,9 @@ onMounted(async () => {
         </n-flex>
       </n-layout-header>
 
-      <n-layout has-sider>
-        <n-layout-sider collapse-mode="width" :collapsed-width="150" :width="300" show-trigger="bar"
-          content-style="padding: 24px;" bordered>
+      <n-layout>
+        <n-layout-content 
+          content-style="padding: 24px;" >
 
           <n-flex vertical>
 
@@ -108,7 +108,7 @@ onMounted(async () => {
             </n-card>
 
           </n-flex>
-        </n-layout-sider>
+        </n-layout-content>
 
         <n-layout-content content-style="padding: 0 24px;">
 
