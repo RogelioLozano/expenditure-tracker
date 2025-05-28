@@ -12,9 +12,19 @@ export async function addExpenditure({ amount, category }: ExpenditureSummary) {
   if (error) throw error
   return data
 }
-
 export async function getExpenditures(): Promise<Array<ExpenditureSummary>> {
-  const { data, error } = await supabase.from('expenditures').select('amount, category')
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() // 0-based (0 = January)
+  const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0)
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+  const { data, error } = await supabase
+    .from('expenditures')
+    .select('amount, category')
+    .gte('timestamp', startOfMonth.toISOString())
+    .lte('timestamp', endOfMonth.toISOString())
+
   if (error) throw error
   return data
 }
