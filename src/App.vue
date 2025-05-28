@@ -10,7 +10,7 @@ import {
 } from 'naive-ui'
 import { supabase } from '@/services/supabaseClient'
 import { DarkModeOutlined, HomeFilled } from '@vicons/material'
-import { addExpenditure, addCategory, getCategories } from './db/supaBase.ts'
+import { addExpenditure, addCategory, getCategories, getPhrase } from './db/supaBase.ts'
 
 const themeBool = ref(false)
 const inverted = ref(true)
@@ -18,6 +18,8 @@ const expenditure = ref({ amount: 0, category: '' })
 const rubro = ref('')
 const categories = ref<Array<string>>([])
 const pushExpenditure = ref()
+
+const phraseOfDay = ref('')
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function renderIcon(icon: any) {
@@ -42,7 +44,29 @@ const selectOptions = computed(() =>
     value: cat
   }))
 )
+async function loadPhraseOfDay() {
+  const stored = localStorage.getItem('phraseOfDay')
+  const parsed = stored ? JSON.parse(stored) : null
 
+  const now = Date.now()
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+  if (parsed && (now - parsed.timestamp < ONE_DAY_MS)) {
+    phraseOfDay.value = parsed.phrase
+  } else {
+    await fetchNewPhrase()
+  }
+}
+
+
+async function fetchNewPhrase() {
+  const newPhrase = await getPhrase() // Your logic to get a new random phrase
+  phraseOfDay.value = newPhrase
+  localStorage.setItem('phraseOfDay', JSON.stringify({
+    phrase: newPhrase,
+    timestamp: Date.now()
+  }))
+}
 
 
 async function refreshCategories() {
@@ -65,6 +89,7 @@ let channel: ReturnType<typeof supabase.channel> | null = null
 
 onMounted(async () => {
   await refreshCategories()
+  await loadPhraseOfDay()
 
       channel = supabase
         .channel('realtime-categories')
@@ -119,6 +144,9 @@ onUnmounted(() => {
 
           <n-flex vertical>
 
+            <div class="banner">
+              <span class="scrolling-text">{{ phraseOfDay }}</span>
+            </div>
             <n-card>
               <n-flex vertical>
                 <n-input-number v-model:value="expenditure.amount" clearable></n-input-number>
@@ -179,6 +207,32 @@ header {
     display: flex;
     place-items: flex-start;
     flex-wrap: wrap;
+  }
+}
+
+.banner {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  border-bottom: 1px solid #ccc;
+  height: 2em;
+  position: relative;
+}
+
+
+.scrolling-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-left 15s linear infinite;
+}
+
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 </style>

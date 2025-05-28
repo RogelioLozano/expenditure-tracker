@@ -1,6 +1,12 @@
 import { supabase } from '@/services/supabaseClient'
 import { type ExpenditureSummary } from '@/models/expenditures'
 
+export async function getPhrase(): Promise<string> {
+  const { data, error } = await supabase.from('phrases').select().limit(1).single()
+  if (error) throw error
+  return `${data.text} - ${data.author}`
+}
+
 export async function addExpenditure({ amount, category }: ExpenditureSummary) {
   const { data, error } = await supabase.from('expenditures').insert([{ amount, category }])
   if (error) throw error
